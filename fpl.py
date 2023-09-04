@@ -12,7 +12,7 @@ points_map = [10,8,7,6,5,4,3,2,1,0,-1]
 
 def generateResults():
     
-    team_data = pd.read_excel("Fpl.xlsx")
+    team_data = pd.read_excel("Fpl_gw3.xlsx")
     for index, team in team_data.iterrows():
         generateScoresByLeague(team["League_id"], team["Cap"], team["Sub"])
     
@@ -28,14 +28,16 @@ def generateResults():
     for player, team in high_scorer_map[highest_score]:
         print("Player: " + player + " from : " + team + " scored: " + str(highest_score)) 
 
-# def getManagerHistory(manager_id):
 
-#     url = f"{base_url}entry/{manager_id}"
-#     resp = requests.get(url)
-#     manager_data = resp.json()
-#     # print(manager_data.keys())
-#     print(manager_data["summary_event_points"])
-
+def getPlayerPointsByGW(playerId):
+    api_url = f"{base_url}entry/{playerId}/history/"
+    r = requests.get(api_url)
+    data = r.json()
+    current_data = data["current"]
+    gw_data = current_data[-1]
+    transfer_cost = gw_data["event_transfers_cost"]
+    gw_points = gw_data["points"]
+    return int(gw_points) - int(transfer_cost)
 
 def generateScoresByLeague(league_id, cap, sub):
     global highest_score 
@@ -47,13 +49,15 @@ def generateScoresByLeague(league_id, cap, sub):
     total_points = 0
     if 'results' in data["standings"]:
         for result in data["standings"]["results"]:
-            gw_points, player_name = result["event_total"], result["player_name"]
+            playerId, player_name = result["entry"], result["player_name"]
+            gw_points = getPlayerPointsByGW(playerId)
             highest_score = max(highest_score, gw_points)
             high_scorer_map[gw_points].append((player_name, league_name))
-            # print(f"Similarity score: {fuzz.ratio(player_name, cap)}")
-            if cap == player_name or fuzz.ratio(player_name, cap) > 80:
+            if cap == player_name or fuzz.ratio(player_name.lower(), cap) > 70:
+                print("Cap id: " + str(playerId) + " Points scored by cap "+ player_name + " : " + str(gw_points))
                 total_points +=  gw_points * 2
-            elif sub == player_name or fuzz.ratio(player_name.lower(), sub) > 80:
+            elif sub == player_name or fuzz.ratio(player_name.lower(), sub) > 70:
+                print("Sub id: " + str(playerId) + " Points scored by sub "+ player_name + " : " + str(gw_points))
                 total_points += gw_points * 0.5
             else:
                 total_points += gw_points
