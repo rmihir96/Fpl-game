@@ -12,7 +12,7 @@ points_map = [10,8,7,6,5,4,3,2,1,0,-1]
 
 def generateResults():
     
-    team_data = pd.read_excel("Fpl_gw3.xlsx")
+    team_data = pd.read_excel("Fpl.xlsx")
     for index, team in team_data.iterrows():
         generateScoresByLeague(team["League_id"], team["Cap"], team["Sub"])
     
